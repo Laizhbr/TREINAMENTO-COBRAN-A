@@ -1,0 +1,634 @@
+ <!-- Formulário de Identificação -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6" id="user-form">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">👤 Identificação do Colaborador</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nome Completo:</label>
+                <input type="text" id="user-name" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-red-500 focus:outline-none" 
+                       placeholder="Digite seu nome completo" required>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Setor/Equipe:</label>
+                <select id="user-team" class="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-red-500 focus:outline-none">
+                    <option value="">Selecione seu setor</option>
+                    <option value="Cobrança">Cobrança</option>
+                    <option value="Vendas">Vendas</option>
+                    <option value="Atendimento">Atendimento</option>
+                    <option value="Supervisão">Supervisão</option>
+                    <option value="Outro">Outro</option>
+                </select>
+            </div>
+            <button onclick="startTest()" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                🚀 Iniciar Treinamento
+            </button>
+        </div>
+    </div>
+
+    <!-- Painel de Progresso -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6" id="progress-panel" style="display: none;">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800">Desempenho em Cobrança</h3>
+                <p class="text-sm text-gray-600">Colaborador: <span id="display-name" class="font-medium text-red-600"></span></p>
+                <p class="text-sm text-gray-600">Cenário <span id="current-scenario">1</span> de <span id="total-scenarios">10</span></p>
+            </div>
+            <div class="text-right">
+                <div class="text-2xl font-bold text-green-600" id="score">0</div>
+                <div class="text-sm text-gray-600">pontos</div>
+            </div>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-3">
+            <div class="bg-gradient-to-r from-red-500 to-orange-600 h-3 rounded-full transition-all duration-500" 
+                 id="progress-bar" style="width: 0%"></div>
+        </div>
+    </div>
+
+    <!-- Área do Cenário -->
+    <div class="scenario-card bg-white rounded-lg shadow-lg p-6 mb-6" id="scenario-container" style="display: none;">
+        <!-- Conteúdo será inserido pelo JavaScript -->
+    </div>
+
+    <!-- Feedback -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6" id="feedback-container" style="display: none;">
+        <div id="feedback-content"></div>
+    </div>
+
+    <!-- Botões de Controle -->
+    <div class="text-center">
+        <button onclick="nextScenario()" id="next-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg mr-4 transition-colors" style="display: none;">
+            Próximo Cenário →
+        </button>
+        <button onclick="restartGame()" id="restart-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-colors" style="display: none;">
+            🔄 Reiniciar Treinamento
+        </button>
+    </div>
+</div>
+
+<script>
+    // Cenários de cobrança
+    const scenarios = [
+        {
+            id: 1,
+            title: "📋 Abertura da Cobrança",
+            situation: "Cliente com 15 dias de atraso. Primeira ligação de cobrança.",
+            customer: "Alô?",
+            debtInfo: "Débito: R$ 30,90 | Vencimento: 15 dias atrás",
+            options: [
+                {
+                    text: "Bom dia! Estou ligando porque sua conta está em atraso e precisa ser paga hoje!",
+                    correct: false,
+                    feedback: "❌ Abordagem muito agressiva logo no início. Pode gerar resistência e desligamento."
+                },
+                {
+                    text: "Bom dia! Meu nome é [Nome], do Cartão de TODOS. Posso falar com o Sr./Sra. [Nome]? Estou ligando para ajudar com a regularização da sua mensalidade.",
+                    correct: true,
+                    feedback: "✅ Perfeito! Abordagem profissional, educada e posicionou como ajuda, não cobrança agressiva."
+                },
+                {
+                    text: "Oi, você está devendo R$ 30,90 do cartão.",
+                    correct: false,
+                    feedback: "❌ Muito direto e sem apresentação. Falta profissionalismo e pode causar constrangimento."
+                }
+            ]
+        },
+        {
+            id: 2,
+            title: "💰 Cliente Esqueceu de Pagar",
+            situation: "Cliente reconhece o débito e diz que esqueceu.",
+            customer: "Ah, é verdade! Esqueci completamente de atualizar os dados do cartão...",
+            debtInfo: "Débito: R$ 30,90 | Cliente colaborativo",
+            options: [
+                {
+                    text: "Sem problemas! Posso atualizar agora mesmo seus dados e regularizar. Tem o cartão em mãos?",
+                    correct: true,
+                    feedback: "✅ Excelente! Aproveitou a boa vontade do cliente e direcionou para solução imediata."
+                },
+                {
+                    text: "Então precisa pagar hoje para não ter mais problemas.",
+                    correct: false,
+                    feedback: "❌ Tom ameaçador desnecessário com cliente colaborativo. Perdeu oportunidade de fidelizar."
+                },
+                {
+                    text: "Tudo bem, pode pagar quando puder.",
+                    correct: false,
+                    feedback: "❌ Muito passivo. Não direcionou para ação imediata nem aproveitou a disposição do cliente."
+                }
+            ]
+        },
+        {
+            id: 3,
+            title: "😤 Cliente Irritado",
+            situation: "Cliente está irritado com a ligação de cobrança.",
+            customer: "Que saco! Vocês ficam ligando toda hora! Já disse que vou pagar!",
+            debtInfo: "Débito: R$ 61,80 (2 meses) | Cliente irritado",
+            options: [
+                {
+                    text: "Desculpe o incômodo, mas é nosso trabalho cobrar.",
+                    correct: false,
+                    feedback: "❌ Resposta defensiva que pode aumentar a irritação. Não mostrou empatia."
+                },
+                {
+                    text: "Entendo sua irritação e peço desculpas. Estou aqui justamente para resolver isso de uma vez. Quando você consegue regularizar para pararmos de incomodar?",
+                    correct: true,
+                    feedback: "✅ Perfeito! Mostrou empatia, pediu desculpas e direcionou para solução com benefício mútuo."
+                },
+                {
+                    text: "Se pagasse em dia, não precisaríamos ligar!",
+                    correct: false,
+                    feedback: "❌ Resposta confrontativa que pode escalar o conflito e prejudicar a negociação."
+                }
+            ]
+        },
+        {
+            id: 4,
+            title: "💸 Dificuldade Financeira",
+            situation: "Cliente alega dificuldades financeiras.",
+            customer: "Olha, estou desempregado há 2 meses... Não tenho como pagar agora.",
+            debtInfo: "Débito: R$ 92,70 (3 meses) | Situação financeira difícil",
+            options: [
+                {
+                    text: "Entendo sua situação. Que tal cancelarmos o cartão para você não ter mais essa preocupação?",
+                    correct: false,
+                    feedback: "❌ Ofereceu cancelamento muito rapidamente. Perdeu oportunidade de negociar e manter cliente."
+                },
+                {
+                    text: "Compreendo sua dificuldade. Posso oferecer um desconto de 50% se conseguir pagar R$ 46,35 hoje, ou parcelar em 3x sem juros. O que funciona melhor?",
+                    correct: true,
+                    feedback: "✅ Excelente! Mostrou empatia, ofereceu soluções viáveis e deu opções para o cliente escolher."
+                },
+                {
+                    text: "Mas são só R$ 30,90 por mês, não é muito dinheiro.",
+                    correct: false,
+                    feedback: "❌ Minimizou a dificuldade do cliente. Falta de empatia pode gerar revolta."
+                }
+            ]
+        },
+        {
+            id: 5,
+            title: "🤔 Cliente Questiona o Serviço",
+            situation: "Cliente diz que não usa o cartão e questiona o valor.",
+            customer: "Nunca usei esse cartão! Por que vou pagar por algo que não uso?",
+            debtInfo: "Débito: R$ 30,90 | Cliente questiona utilidade",
+            options: [
+                {
+                    text: "O senhor contratou o serviço, então tem que pagar independente de usar ou não.",
+                    correct: false,
+                    feedback: "❌ Resposta inflexível que não agrega valor nem resolve a objeção do cliente."
+                },
+                {
+                    text: "Entendo! Muitos clientes não sabem usar todos os benefícios. Que tal eu explicar como economizar nas consultas médicas e depois regularizamos a conta?",
+                    correct: true,
+                    feedback: "✅ Ótimo! Transformou objeção em oportunidade de mostrar valor e educar o cliente."
+                },
+                {
+                    text: "Se não quer usar, pode cancelar, mas tem que pagar o que deve.",
+                    correct: false,
+                    feedback: "❌ Não tentou resgatar o valor do produto nem negociar uma solução win-win."
+                }
+            ]
+        },
+        {
+            id: 6,
+            title: "📅 Negociação de Prazo",
+            situation: "Cliente quer negociar prazo para pagamento.",
+            customer: "Posso pagar, mas só no final do mês quando recebo. Pode ser dia 30?",
+            debtInfo: "Débito: R$ 30,90 | Cliente propõe prazo",
+            options: [
+                {
+                    text: "Não posso dar esse prazo. Tem que ser até amanhã.",
+                    correct: false,
+                    feedback: "❌ Inflexibilidade desnecessária com cliente que mostrou disposição para pagar."
+                },
+                {
+                    text: "Perfeito! Vou agendar para dia 30. Posso confirmar seus dados para garantir que o débito seja processado corretamente?",
+                    correct: true,
+                    feedback: "✅ Excelente! Aceitou proposta razoável e aproveitou para confirmar dados, garantindo o pagamento."
+                },
+                {
+                    text: "Ok, dia 30 então. Tchau.",
+                    correct: false,
+                    feedback: "❌ Não confirmou dados nem criou compromisso formal. Alto risco de inadimplência."
+                }
+            ]
+        },
+        {
+            id: 7,
+            title: "🏥 Reforçando Valor do Produto",
+            situation: "Cliente considera cancelar por não ver valor.",
+            customer: "Acho que vou cancelar mesmo... Não vejo vantagem nesse cartão.",
+            debtInfo: "Débito: R$ 61,80 (2 meses) | Risco de cancelamento",
+            options: [
+                {
+                    text: "Tudo bem, posso cancelar. Mas precisa quitar o débito primeiro.",
+                    correct: false,
+                    feedback: "❌ Aceitou cancelamento facilmente sem tentar resgatar o cliente nem mostrar valor."
+                },
+                {
+                    text: "Entendo sua preocupação. Sabia que uma consulta particular custa R$ 200? Com seu cartão, paga apenas R$ 30. Uma única consulta já paga 6 meses! Vale repensar?",
+                    correct: true,
+                    feedback: "✅ Perfeito! Mostrou valor concreto com comparação clara e questionou a decisão de forma inteligente."
+                },
+                {
+                    text: "O cartão é muito bom, você que não sabe usar.",
+                    correct: false,
+                    feedback: "❌ Culpou o cliente em vez de educar. Abordagem que pode gerar conflito."
+                }
+            ]
+        },
+        {
+            id: 8,
+            title: "🎯 Fechamento com Desconto",
+            situation: "Cliente aceita pagar com desconto oferecido.",
+            customer: "Ok, aceito pagar os 50% de desconto que você ofereceu. Como faço?",
+            debtInfo: "Débito: R$ 92,70 → R$ 46,35 (com desconto)",
+            options: [
+                {
+                    text: "Ótimo! Vou processar agora. Qual cartão você vai usar para o débito de R$ 46,35?",
+                    correct: true,
+                    feedback: "✅ Perfeito! Assumiu controle, confirmou valor e direcionou para ação imediata."
+                },
+                {
+                    text: "Legal! Vou te passar para o financeiro fazer o acordo.",
+                    correct: false,
+                    feedback: "❌ Perdeu momentum da negociação. Transferências podem gerar desistência."
+                },
+                {
+                    text: "Que bom! Você pode pagar quando quiser.",
+                    correct: false,
+                    feedback: "❌ Não direcionou para pagamento imediato. Cliente pode mudar de ideia."
+                }
+            ]
+        },
+        {
+            id: 9,
+            title: "⚠️ Cliente Ameaça Processar",
+            situation: "Cliente ameaça com ação legal por cobrança.",
+            customer: "Vocês estão me perturbando! Vou processar essa empresa por assédio!",
+            debtInfo: "Débito: R$ 123,60 (4 meses) | Cliente ameaçador",
+            options: [
+                {
+                    text: "Pode processar! Você que está devendo!",
+                    correct: false,
+                    feedback: "❌ Confronto direto pode escalar situação. Resposta inadequada para situação tensa."
+                },
+                {
+                    text: "Lamento que se sinta assim. Nosso objetivo é apenas regularizar sua situação. Posso anotar sua solicitação para reduzir contatos e focarmos numa solução?",
+                    correct: true,
+                    feedback: "✅ Excelente! Manteve calma, mostrou empatia e direcionou para solução construtiva."
+                },
+                {
+                    text: "Desculpa, vou cancelar sua conta então.",
+                    correct: false,
+                    feedback: "❌ Cedeu à pressão sem tentar resolver. Perdeu oportunidade de recuperar débito."
+                }
+            ]
+        },
+        {
+            id: 10,
+            title: "🎉 Recuperação Bem-sucedida",
+            situation: "Cliente pagou e quer continuar usando o cartão.",
+            customer: "Pronto, acabei de pagar! Obrigado pela paciência. Como faço para usar melhor o cartão?",
+            debtInfo: "Débito: QUITADO ✅ | Cliente satisfeito",
+            options: [
+                {
+                    text: "Que bom que pagou! Tchau!",
+                    correct: false,
+                    feedback: "❌ Perdeu oportunidade de fidelizar cliente e educar sobre benefícios."
+                },
+                {
+                    text: "Perfeito! Obrigado pelo pagamento. Vou te enviar por SMS os principais parceiros para consultas e descontos. Sua família toda pode usar!",
+                    correct: true,
+                    feedback: "✅ Excelente! Agradeceu, ofereceu valor adicional e reforçou benefício familiar. Cliente fidelizado!"
+                },
+                {
+                    text: "Ok, está regularizado. Não atrase mais.",
+                    correct: false,
+                    feedback: "❌ Tom de advertência desnecessário com cliente que colaborou. Pode gerar má impressão."
+                }
+            ]
+        }
+    ];
+
+    let currentScenarioIndex = 0;
+    let score = 0;
+    let totalScenarios = scenarios.length;
+    let userName = '';
+    let userTeam = '';
+    let testStartTime = null;
+    let testEndTime = null;
+
+    function startTest() {
+        const nameInput = document.getElementById('user-name');
+        const teamSelect = document.getElementById('user-team');
+        
+        if (!nameInput.value.trim()) {
+            alert('Por favor, digite seu nome completo.');
+            nameInput.focus();
+            return;
+        }
+        
+        if (!teamSelect.value) {
+            alert('Por favor, selecione seu setor.');
+            teamSelect.focus();
+            return;
+        }
+        
+        userName = nameInput.value.trim();
+        userTeam = teamSelect.value;
+        testStartTime = new Date();
+        
+        // Ocultar formulário e mostrar teste
+        document.getElementById('user-form').style.display = 'none';
+        document.getElementById('progress-panel').style.display = 'block';
+        document.getElementById('scenario-container').style.display = 'block';
+        document.getElementById('display-name').textContent = userName;
+        
+        loadScenario();
+    }
+
+    function loadScenario() {
+        const scenario = scenarios[currentScenarioIndex];
+        const container = document.getElementById('scenario-container');
+        
+        container.innerHTML = `
+            <div class="mb-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-3">${scenario.title}</h3>
+                <div class="bg-red-50 rounded-lg p-4 mb-4">
+                    <p class="text-gray-700 mb-3"><strong>Situação:</strong> ${scenario.situation}</p>
+                    <div class="debt-indicator bg-red-100 border-l-4 border-red-500 p-3 rounded mb-3">
+                        <p class="text-red-800 font-medium">💳 ${scenario.debtInfo}</p>
+                    </div>
+                    <div class="bg-white rounded-lg p-3 border-l-4 border-orange-500">
+                        <p class="text-gray-800"><strong>Cliente:</strong> "${scenario.customer}"</p>
+                    </div>
+                </div>
+                <h4 class="text-lg font-semibold text-gray-800 mb-3">Como você responderia?</h4>
+                <div class="space-y-3">
+                    ${scenario.options.map((option, index) => `
+                        <button class="option-button w-full text-left p-4 bg-gray-50 hover:bg-gray-100 rounded-lg border-2 border-gray-200 transition-all"
+                                onclick="selectOption(${index})">
+                            <span class="font-medium text-gray-800">${String.fromCharCode(65 + index)})</span>
+                            <span class="ml-2 text-gray-700">${option.text}</span>
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+        // Atualizar indicadores
+        document.getElementById('current-scenario').textContent = currentScenarioIndex + 1;
+        document.getElementById('total-scenarios').textContent = totalScenarios;
+        updateProgressBar();
+    }
+
+    function selectOption(optionIndex) {
+        const scenario = scenarios[currentScenarioIndex];
+        const option = scenario.options[optionIndex];
+        const buttons = document.querySelectorAll('.option-button');
+        
+        // Desabilitar todos os botões
+        buttons.forEach(btn => btn.style.pointerEvents = 'none');
+        
+        // Destacar resposta selecionada
+        const selectedButton = buttons[optionIndex];
+        
+        if (option.correct) {
+            selectedButton.classList.add('correct-answer');
+            selectedButton.className = selectedButton.className.replace('bg-gray-50', 'bg-green-100 border-green-500');
+            score += 100;
+            document.getElementById('score').textContent = score;
+        } else {
+            selectedButton.classList.add('incorrect-answer');
+            selectedButton.className = selectedButton.className.replace('bg-gray-50', 'bg-red-100 border-red-500');
+            
+            // Mostrar resposta correta
+            scenario.options.forEach((opt, idx) => {
+                if (opt.correct) {
+                    buttons[idx].className = buttons[idx].className.replace('bg-gray-50', 'bg-green-100 border-green-500');
+                }
+            });
+        }
+
+        // Mostrar feedback
+        showFeedback(option.feedback, option.correct);
+        
+        // Mostrar botão próximo
+        document.getElementById('next-btn').style.display = 'inline-block';
+    }
+
+    function showFeedback(message, isCorrect) {
+        const container = document.getElementById('feedback-container');
+        const content = document.getElementById('feedback-content');
+        
+        const bgColor = isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+        const textColor = isCorrect ? 'text-green-800' : 'text-red-800';
+        
+        content.innerHTML = `
+            <div class="border-2 rounded-lg p-4 ${bgColor}">
+                <p class="font-medium ${textColor}">${message}</p>
+                ${isCorrect ? 
+                    '<p class="text-green-600 text-sm mt-2">+100 pontos! Ótima abordagem! 🎯</p>' : 
+                    '<p class="text-red-600 text-sm mt-2">Continue praticando! A empatia é fundamental na cobrança! 💪</p>'
+                }
+            </div>
+        `;
+        
+        container.style.display = 'block';
+    }
+
+    function nextScenario() {
+        currentScenarioIndex++;
+        
+        if (currentScenarioIndex >= totalScenarios) {
+            showFinalResults();
+        } else {
+            document.getElementById('feedback-container').style.display = 'none';
+            document.getElementById('next-btn').style.display = 'none';
+            loadScenario();
+        }
+    }
+
+    function showFinalResults() {
+        testEndTime = new Date();
+        const testDuration = Math.round((testEndTime - testStartTime) / 1000 / 60); // em minutos
+        const container = document.getElementById('scenario-container');
+        const percentage = (score / (totalScenarios * 100)) * 100;
+        
+        let performance, message, emoji;
+        if (percentage >= 90) {
+            performance = "Especialista em Cobrança! 🏆";
+            message = "Parabéns! Você domina a arte da cobrança humanizada e eficaz!";
+            emoji = "🎉";
+        } else if (percentage >= 70) {
+            performance = "Cobrador Eficiente! 👍";
+            message = "Muito bem! Você tem boa técnica, continue aprimorando!";
+            emoji = "💪";
+        } else if (percentage >= 50) {
+            performance = "Em Desenvolvimento 📈";
+            message = "Você está evoluindo! Foque na empatia e negociação!";
+            emoji = "🎯";
+        } else {
+            performance = "Precisa Melhorar 📚";
+            message = "Continue treinando! A cobrança eficaz é uma habilidade que se desenvolve!";
+            emoji = "💡";
+        }
+
+        // Enviar dados para o servidor (simulado)
+        sendResultsToServer();
+
+        container.innerHTML = `
+            <div class="text-center celebration">
+                <div class="text-6xl mb-4">${emoji}</div>
+                <h3 class="text-2xl font-bold text-gray-800 mb-2">${performance}</h3>
+                <p class="text-lg text-gray-600 mb-4">${message}</p>
+                
+                <!-- Dados do Colaborador -->
+                <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 mb-4">
+                    <h4 class="font-bold text-blue-800 mb-2">📋 Dados do Teste</h4>
+                    <div class="text-sm text-blue-700 space-y-1">
+                        <p><strong>Colaborador:</strong> ${userName}</p>
+                        <p><strong>Setor:</strong> ${userTeam}</p>
+                        <p><strong>Data:</strong> ${testEndTime.toLocaleDateString('pt-BR')}</p>
+                        <p><strong>Horário:</strong> ${testEndTime.toLocaleTimeString('pt-BR')}</p>
+                        <p><strong>Duração:</strong> ${testDuration} minutos</p>
+                    </div>
+                </div>
+                
+                <div class="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg p-6 mb-6">
+                    <div class="text-3xl font-bold text-red-600 mb-2">${score} pontos</div>
+                    <div class="text-lg text-gray-700">${percentage.toFixed(0)}% de aproveitamento</div>
+                </div>
+                
+                <div class="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
+                    <h4 class="font-bold text-green-800 mb-2">✅ Resultado Registrado!</h4>
+                    <p class="text-sm text-green-700 mb-3">Seus dados foram salvos automaticamente.</p>
+                    <button onclick="sendToWhatsApp()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                        📱 Enviar por WhatsApp
+                    </button>
+                </div>
+                
+                <div class="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+                    <h4 class="font-bold text-yellow-800 mb-2">💡 Princípios da Cobrança Eficaz:</h4>
+                    <ul class="text-sm text-yellow-700 text-left space-y-1">
+                        <li>• <strong>Empatia:</strong> Entenda a situação do cliente</li>
+                        <li>• <strong>Profissionalismo:</strong> Mantenha sempre o respeito</li>
+                        <li>• <strong>Soluções:</strong> Ofereça alternativas viáveis</li>
+                        <li>• <strong>Valor:</strong> Reforce os benefícios do produto</li>
+                        <li>• <strong>Urgência:</strong> Direcione para ação imediata</li>
+                        <li>• <strong>Fidelização:</strong> Transforme cobrança em relacionamento</li>
+                    </ul>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('restart-btn').style.display = 'inline-block';
+    }
+
+    function updateProgressBar() {
+        const progress = ((currentScenarioIndex) / totalScenarios) * 100;
+        document.getElementById('progress-bar').style.width = progress + '%';
+    }
+
+    function sendResultsToServer() {
+        const testData = {
+            nome: userName,
+            setor: userTeam,
+            pontuacao: score,
+            porcentagem: ((score / (totalScenarios * 100)) * 100).toFixed(0),
+            data: testEndTime.toLocaleDateString('pt-BR'),
+            horario: testEndTime.toLocaleTimeString('pt-BR'),
+            duracao: Math.round((testEndTime - testStartTime) / 1000 / 60),
+            cenarios_corretos: score / 100,
+            total_cenarios: totalScenarios
+        };
+
+        // Enviar para Google Sheets
+        sendToGoogleSheets(testData);
+        
+        // Salvar localmente também (para backup)
+        localStorage.setItem('ultimo_teste_cobranca', JSON.stringify(testData));
+    }
+
+    function sendToGoogleSheets(data) {
+        // URL do Google Apps Script (você precisará criar e colar aqui)
+        const GOOGLE_SCRIPT_URL = 'COLE_SUA_URL_DO_GOOGLE_SCRIPT_AQUI';
+        
+        // Tentar enviar para Google Sheets
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(() => {
+            console.log('✅ Dados enviados para Google Sheets');
+        })
+        .catch(error => {
+            console.log('⚠️ Erro ao enviar para Google Sheets:', error);
+        });
+    }
+
+    function sendToWhatsApp() {
+        const percentage = ((score / (totalScenarios * 100)) * 100).toFixed(0);
+        const duration = Math.round((testEndTime - testStartTime) / 1000 / 60);
+        
+        const message = `🎯 *RESULTADO DO TREINAMENTO DE COBRANÇA*
+        
+👤 Colaborador: ${userName}
+🏢 Setor: ${userTeam}
+📅 Data: ${testEndTime.toLocaleDateString('pt-BR')}
+⏰ Horário: ${testEndTime.toLocaleTimeString('pt-BR')}
+⏱️ Duração: ${duration} minutos
+📊 DESEMPENHO:
+• Pontuação: ${score} pontos
+• Aproveitamento: ${percentage}%
+• Cenários corretos: ${score/100}/${totalScenarios}
+${percentage >= 90 ? '🏆 Especialista em Cobrança!' :
+percentage >= 70 ? '👍 Cobrador Eficiente!' :
+percentage >= 50 ? '📈 Em Desenvolvimento' : '📚 Precisa Melhorar'}
+Enviado pelo Sistema de Treinamento - Cartão de TODOS`;
+        // Substitua pelo seu número (formato: 5511999999999)
+        const phoneNumber = '5522999477421';
+        const whatsappURL = `https://wa.me/${5522999477421}?text=${encodeURIComponent(message)}`;
+        
+        window.open(whatsappURL, '_blank');
+    }
+
+    function restartGame() {
+        currentScenarioIndex = 0;
+        score = 0;
+        userName = '';
+        userTeam = '';
+        testStartTime = null;
+        testEndTime = null;
+        
+        document.getElementById('score').textContent = score;
+        document.getElementById('feedback-container').style.display = 'none';
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('restart-btn').style.display = 'none';
+        document.getElementById('progress-panel').style.display = 'none';
+        document.getElementById('scenario-container').style.display = 'none';
+        document.getElementById('user-form').style.display = 'block';
+        
+        // Limpar campos
+        document.getElementById('user-name').value = '';
+        document.getElementById('user-team').value = '';
+    }
+
+    // Função para gerar QR Code (demonstração)
+    function generateQRCode() {
+        const currentURL = window.location.href;
+        console.log('🔗 URL para QR Code:', currentURL);
+        console.log('📱 Use um gerador de QR Code online com esta URL');
+    }
+
+    // Inicializar
+    window.onload = function() {
+        generateQRCode();
+        console.log('🚀 Sistema de treinamento carregado!');
+        console.log('📋 Para ver os resultados, abra o Console do navegador após completar um teste');
+    };
+</script>
